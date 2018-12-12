@@ -1,0 +1,39 @@
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+from pdfminer.pdfpage import PDFPage
+from io import StringIO
+
+def convert_pdf_to_txt(path):
+    rsrcmgr = PDFResourceManager()
+    retstr = StringIO()
+    codec = 'utf-8'
+    laparams = LAParams()
+    device = TextConverter(rsrcmgr, retstr, codec=codec, laparams=laparams)
+    interpreter = PDFPageInterpreter(rsrcmgr, device)
+    password = ""
+    maxpages = 0
+    caching = True
+    pagenos=set()
+    with open(path, 'rb') as fp:
+        for page in PDFPage.get_pages(fp, pagenos, maxpages=maxpages, password=password,caching=caching, check_extractable=True):
+            interpreter.process_page(page)
+    fp.close()
+    device.close()
+    string = retstr.getvalue()
+    retstr.close()
+    return string
+
+text = convert_pdf_to_txt('try.pdf')
+reference=text[text.find('References'):]
+ref_list = reference.split('[')[1:]
+clean_ref=[]
+for ref in ref_list:
+    clean = ref.split('.')[1].replace('\n', ' ')
+    clean_ref.append(clean)
+
+import webbrowser
+for term in clean_ref[:4]: #only first 4 for debugging
+    url = "https://scholar.google.co.il/scholar?hl=iw&as_sdt=0%2C5&q={}".format(term)
+    webbrowser.open_new_tab(url)
+
